@@ -1,0 +1,15 @@
+.fotter{
+    background-color:#0F172A ;
+    height: 70px;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0;
+}
+.fotter h3{
+   margin-top: 40px;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+
+}
