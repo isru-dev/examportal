@@ -1,0 +1,82 @@
+ *{
+      margin: 0;
+      padding: 0;
+ }
+   
+  body{
+        margin-bottom: 90px;
+
+  }
+.visible{
+  display: block;
+}
+
+.course1{
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ border: 1px solid black;
+background-color: #0F172A;
+color: white;
+  height: 90px;
+  align-items: center;
+}
+.details button{
+  background-color: #cfd2db;
+  padding: 8px 7px 8px 7px;
+   border-radius: 10px;
+   cursor: pointer;
+   font-size: 17px;
+   width: 150px;
+   margin-bottom: 10px;
+}
+.start button{
+   background-color: rgba(204, 15, 24, 0.865);
+  padding: 8px 7px 8px 7px;
+   border-radius: 10px;
+   cursor: pointer;
+   font-size: 17px;
+      width: 150px;
+
+}
+.courseresult{
+   display: grid;
+   grid-template-columns: 2fr 1fr;
+   border: 1px solid ;
+   height: 60px;
+  padding: 8px 7px 8px 7px;
+   align-items: center;
+  border-bottom: 2px solid;
+  background-color: #0F172A;
+}
+.course-name h3{
+    font-size: 25px;
+
+}
+.view button{
+   background-color: #cfd2db;
+  padding: 8px 7px 8px 7px;
+   border-radius: 10px;
+   cursor: pointer;
+   font-size: 17px;
+}
+.div-result h1,.div-schedule h1{
+  text-align: center;
+  color: black;
+}
+
+/*media query*/
+@media (min-width:500px){
+  .stud h1{
+  display: block;
+}
+}
+@media (min-width:700px){
+  .course1{
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+}
+.btn{
+  display: grid;
+  grid-template-columns: 200px 200px;
+}
+}

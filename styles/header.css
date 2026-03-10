@@ -28,19 +28,17 @@ body{
   font-size: 50px;
 }
 body{
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
 
-button{
-  background-color:#2563EB;
-  color:white;
-  margin-top: 199px;
-}
+
 
 /*sidebar*/
 .side-prof{
  display: none;
  padding-left: 0;
+ color: #CBD5F1;
 }
 .sidebar{
   background-color:#1E293B;
@@ -79,15 +77,15 @@ button{
 }
 .logout{
   padding: 10px;
-  font-size: 20px;
-  background-color: rgb(244, 154, 10);
+  font-size: px;
+  background-color: #3B82F6;
 }
 .profile{
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 100px 1fr;
   padding: 0px;
   align-items: center;
-  column-gap: 30px;
+  column-gap: 20px;
   justify-content: space-evenly;
    position: fixed;
   bottom: 70px;
@@ -102,10 +100,11 @@ button{
   background-color: rgba(105, 103, 100, 0.505);
 }
 .fa-circle-user{
-  width: 100px;
+  width: 90px;
   font-size: 50px;
   cursor: pointer;
-   padding: 10px;
+   padding: 6px;
+   margin-left: 0;
 }
 /*hero section*/
 .hero-section {
