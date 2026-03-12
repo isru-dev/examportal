@@ -1,0 +1,84 @@
+*{
+  font-family:Georgia, 'Times New Roman', Times, serif;
+  color: white;
+}
+body{
+    background-color: #E2E8F0;
+
+}
+header{
+  background-color:  #1b294e;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+}
+header img{
+  width: 100px;
+  margin: 10px ;
+  height: 90px;
+
+}
+form{
+background-color:  #1b294e;
+  width: 400px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  border-radius: 10px;
+  padding: 25px;
+}
+input{
+    width: 250px;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    color: black;
+    font-size: 18px;
+}
+.role{
+  width: 290px;
+  height: 40px;
+  padding: 7px 20px 7px 10px;
+  color: black;
+  border-radius: 50px;
+}
+.role option{
+  color: black;
+  border-radius: 15px;
+  background-color: beige;
+}
+.container{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 108px;
+}
+.register{
+  border: none;
+  padding: 10px;
+  color: black;
+  width: 330px;
+  border-radius: 50px;
+  margin: 15px;
+background-color: #6a64d4;
+   font-weight: bold;
+   font-size: 17px;
+   cursor: pointer;
+}
+.login{
+  background-color:#64748B;
+  width: 300px;
+  text-align: center;
+  padding: 10px;
+  border-radius: 50px;
+  margin: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+}
+a{
+  text-decoration: none;
+}
