@@ -137,9 +137,42 @@ app.get('/studentdash',(req,res)=>{
 app.get('/teachersdash',(req,res)=>{
    res.sendFile(path.join(__dirname,'..','public','teacherdashboard.html'))
 });
-app.post('/login',(req,res)=>{
 
-})
+  app.post('/login', (req, res) => {
+  
+    const {username, password } = req.body;
+
+    const query = `
+        SELECT  u.*, r.RoleName 
+        FROM users u 
+        JOIN roles r ON u.RoleID = r.RoleID
+        WHERE u.Username = ? AND u.Password = ?`;
+
+    connection.query(query, [username, password], (err, results) => {
+        if (err) throw err;
+
+        if (results.length > 0) {
+            const user = results[0];
+            
+            // 1. Save user info in the session
+         //   req.session.user = user;
+
+            // 2. Redirect based on the RoleName we got from the JOIN
+            if (user.RoleName === 'Teacher') {
+                res.redirect('/teachersdash');
+            } else if (user.RoleName === 'Student') {
+                res.redirect('/studentdash');
+            }
+        } else {
+            res.send('Invalid username or password');
+        }
+    });
+});
+  
+  
+app.get('/profile',(req,res)=>{
+  
+});
 app.listen(5000,(err)=>{
   if(err)
      console.log(err);
