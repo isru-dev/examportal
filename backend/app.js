@@ -3,9 +3,17 @@ const mysql=require('mysql2');
 const path=require('path');
 const bodyParser=require('body-parser');
 
-
 let app=express();
  app.use(bodyParser.urlencoded({extended:true}));//to change it to js object 
+const session = require('express-session');
+
+// This tells Express to handle the "VIP Wristbands" (Sessions)
+app.use(session({
+  secret: 'isru_secret_key', // A random string used to sign the session cookie
+  resave: false,             // Don't resave the session if nothing changed
+  saveUninitialized: false,  // Don't create a session until a user logs in
+  cookie: { maxAge: 3600000 } // The cookie expires in 1 hour (3,600,000 ms)
+}));
 
 let connection=mysql.createConnection({
   host:"127.0.0.1",
@@ -91,21 +99,21 @@ app.post('/register',(req,res)=>{
   let lastName=req.body.last_name;
   let username=req.body.username;
   let role=req.body.role;
-  let Password=req.body.Password;
-  let RoleID=1;
-if(role==='Teacher'){
-   RoleID=2;
-}
+  let password=req.body.password;
+ 
+let RoleID = (role.toLowerCase() === 'student') ? 1 : 2;
 let fullName = `${firstName} ${lastName}`;
- let userT=`INSERT INTO users (FullName,Username,Password,RoleID)
-    VALUES ('${fullName}','${username}','${Password}',${RoleID});
+ let userT=`INSERT INTO users (FullName,Username,password,RoleID)
+    VALUES ('${fullName}','${username}','${password}',${RoleID});
   `;
  
 connection.query(userT,(err,result)=>{
   if(err) console.log(err);
    let userId=result.insertId;
-
-   if(role==='student'){
+    req.session.userId = userId;    // Save the ID
+  req.session.role = role;    // Save the Role (Teacher/Student)
+   req.session.name = fullName;
+   if(role==='Student'){
        let studentT=`INSERT INTO Students (UserID)
     VALUES (${userId});
   `;
@@ -117,7 +125,7 @@ connection.query(userT,(err,result)=>{
    }
    else{
      let teachersT=`INSERT INTO Teachers (UserID)
-    VALUES (${userId});
+    VALUES (${userId});-
   `;
    connection.query(teachersT,()=>{
     if(err) console.log(err);
@@ -131,11 +139,21 @@ connection.query(userT,(err,result)=>{
 });
 
 });
-app.get('/studentdash',(req,res)=>{
-   res.sendFile(path.join(__dirname,'..','public','studentdash.html'))
+app.get('/studentdash', (req, res) => {
+    // Check if the user is logged in AND is a Teacher
+    if (req.session.userId && req.session.role === 'Student') {
+        res.sendFile(path.join(__dirname, '..', 'public', 'studentdash.html'));
+    } else {
+        res.send("Please login as a Student to view this page.");
+    }
 });
-app.get('/teachersdash',(req,res)=>{
-   res.sendFile(path.join(__dirname,'..','public','teacherdashboard.html'))
+app.get('/teachersdash', (req, res) => {
+    // Check if the user is logged in AND is a Teacher
+    if (req.session.userId && req.session.role === 'Teacher') {
+        res.sendFile(path.join(__dirname, '..', 'public', 'teacherdashboard.html'));
+    } else {
+        res.send("Please login as a Teacher to view this page.");
+    }
 });
 
   app.post('/login', (req, res) => {
@@ -154,8 +172,11 @@ app.get('/teachersdash',(req,res)=>{
         if (results.length > 0) {
             const user = results[0];
             
-            // 1. Save user info in the session
-         //   req.session.user = user;
+            req.session.userId = user.UserID;    // Save the ID
+            req.session.role = user.RoleName;    // Save the Role (Teacher/Student)
+            req.session.name = user.FullName;
+            console.log(req.session);
+
 
             // 2. Redirect based on the RoleName we got from the JOIN
             if (user.RoleName === 'Teacher') {
