@@ -6,6 +6,7 @@ const bodyParser=require('body-parser');
 let app=express();
  app.use(bodyParser.urlencoded({extended:true}));//to change it to js object 
 const session = require('express-session');
+const { log } = require('console');
 
 // This tells Express to handle the "VIP Wristbands" (Sessions)
 app.use(session({
@@ -193,6 +194,19 @@ app.get('/teachersdash', (req, res) => {
   
 app.get('/profile',(req,res)=>{
   
+});
+app.get('/userinfo',(req,res)=>{
+   if(req.session.userId){
+   console.log(req.session.userId);
+   
+     res.json({
+       loggedIn:true,
+       name:req.session.name
+     });
+   }else{
+    console.log("No session found!");
+     res.json({ loggedIn: false });
+   }
 });
 app.listen(5000,(err)=>{
   if(err)
