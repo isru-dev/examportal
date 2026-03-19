@@ -15,7 +15,10 @@ app.use(session({
   saveUninitialized: false,  // Don't create a session until a user logs in
   cookie: { maxAge: 3600000 } // The cookie expires in 1 hour (3,600,000 ms)
 }));
-
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    next();
+});
 let connection=mysql.createConnection({
   host:"127.0.0.1",
   user:"root",
@@ -192,8 +195,20 @@ app.get('/teachersdash', (req, res) => {
 });
   
   
-app.get('/profile',(req,res)=>{
-  
+app.get('/logout',(req,res)=>{
+    // 1. Destroy the session in the server's memory
+    req.session.destroy((err) => {
+        if (err) {
+            console.log("Logout Error:", err);
+            return res.send("Error logging out.");
+        }
+        
+        // 2. Clear the cookie in the user's browser and if the user wants to comeback by press back it reject it
+        res.clearCookie('connect.sid'); 
+        
+        // 3. Send them back to the login page
+        res.redirect('/login.html');
+    });
 });
 app.get('/userinfo',(req,res)=>{
    if(req.session.userId){
@@ -208,6 +223,7 @@ app.get('/userinfo',(req,res)=>{
      res.json({ loggedIn: false });
    }
 });
+
 app.listen(5000,(err)=>{
   if(err)
      console.log(err);
