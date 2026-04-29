@@ -9,8 +9,6 @@ console.log(n);
 
  async function userinfo(){
   try{
-
-  
   const response=await fetch('/userinfo');
   const data = await response.json();
   console.log(data);

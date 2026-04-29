@@ -1,6 +1,9 @@
 *{
   font-family:Georgia, 'Times New Roman', Times, serif;
   color: white;
+  margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 body{
     background-color: #E2E8F0;
@@ -16,7 +19,7 @@ header{
 }
 header img{
   width: 100px;
-  margin: 10px ;
+  margin: 0px ;
   height: 90px;
 
 }
@@ -34,7 +37,7 @@ input{
     padding: 10px;
     border: none;
     border-radius: 6px;
-    margin-bottom: 8px;
+    margin-bottom: 0px;
     color: black;
     font-size: 18px;
 }
@@ -55,6 +58,7 @@ input{
   align-items: center;
   justify-content: center;
   margin-top: 108px;
+  min-height: 100vh;
 }
 .register{
   border: none;
