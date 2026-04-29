@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const path = require('path');
 const bodyParser = require('body-parser');
+const bcrypt=require('bcrypt');
 
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));//to change it to js object 
@@ -108,10 +109,10 @@ app.post('/register', (req, res) => {
   let RoleID = (role.toLowerCase() === 'student') ? 1 : 2;
   let fullName = `${firstName} ${lastName}`;
   let userT = `INSERT INTO users (FullName,Username,password,RoleID)
-    VALUES ('${fullName}','${username}','${password}',${RoleID});
+    VALUES (?,?,?,?);
   `;
 
-  connection.query(userT, (err, result) => {
+  connection.query(userT,[fullName,username,password,RoleID], (err, result) => {
     if (err) console.log(err);
     let userId = result.insertId;
     req.session.userId = userId;    // Save the ID
@@ -119,9 +120,9 @@ app.post('/register', (req, res) => {
     req.session.name = fullName;
     if (role === 'Student') {
       let studentT = `INSERT INTO Students (UserID)
-    VALUES (${userId});
+    VALUES (?);
   `;
-      connection.query(studentT, () => {
+      connection.query(studentT,[userId] ,(err) => {
         if (err) console.log(err);
         // res.send("Student Registered!");
         res.redirect('/studentdash');
@@ -129,9 +130,9 @@ app.post('/register', (req, res) => {
     }
     else {
       let teachersT = `INSERT INTO Teachers (UserID)
-    VALUES (${userId});-
+    VALUES (?);
   `;
-      connection.query(teachersT, () => {
+      connection.query(teachersT,[userId], (err) => {
         if (err) console.log(err);
         // res.send("Teacher Registered!");
         res.redirect('/teachersdash');
