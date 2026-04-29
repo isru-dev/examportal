@@ -2,7 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const path = require('path');
 const bodyParser = require('body-parser');
-const bcrypt=require('bcrypt');
+const bcrypt = require('bcrypt');
 
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));//to change it to js object 
@@ -98,7 +98,7 @@ app.get('/install', (req, res) => {
   });
 });
 
-app.post('/register', (req, res) => {
+app.post('/register', async (req, res) => {
   console.log(req.body);
   let firstName = req.body.first_name;
   let lastName = req.body.last_name;
@@ -106,23 +106,30 @@ app.post('/register', (req, res) => {
   let role = req.body.role;
   let password = req.body.password;
 
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
+
   let RoleID = (role.toLowerCase() === 'student') ? 1 : 2;
   let fullName = `${firstName} ${lastName}`;
   let userT = `INSERT INTO users (FullName,Username,password,RoleID)
     VALUES (?,?,?,?);
   `;
 
-  connection.query(userT,[fullName,username,password,RoleID], (err, result) => {
-    if (err) console.log(err);
+  connection.query(userT, [fullName, username, hashedPassword, RoleID], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.send("Error registering user");
+    }
+
     let userId = result.insertId;
     req.session.userId = userId;    // Save the ID
     req.session.role = role;    // Save the Role (Teacher/Student)
     req.session.name = fullName;
-    if (role === 'Student') {
+    if (role.toLowerCase() === 'student') {
       let studentT = `INSERT INTO Students (UserID)
     VALUES (?);
   `;
-      connection.query(studentT,[userId] ,(err) => {
+      connection.query(studentT, [userId], (err) => {
         if (err) console.log(err);
         // res.send("Student Registered!");
         res.redirect('/studentdash');
@@ -132,7 +139,7 @@ app.post('/register', (req, res) => {
       let teachersT = `INSERT INTO Teachers (UserID)
     VALUES (?);
   `;
-      connection.query(teachersT,[userId], (err) => {
+      connection.query(teachersT, [userId], (err) => {
         if (err) console.log(err);
         // res.send("Teacher Registered!");
         res.redirect('/teachersdash');
@@ -161,7 +168,7 @@ app.get('/teachersdash', (req, res) => {
   }
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
 
   const { username, password } = req.body;
 
@@ -169,14 +176,18 @@ app.post('/login', (req, res) => {
         SELECT  u.*, r.RoleName 
         FROM users u 
         JOIN roles r ON u.RoleID = r.RoleID
-        WHERE u.Username = ? AND u.Password = ?`;
+        WHERE u.Username = ?`;
 
   connection.query(query, [username, password], (err, results) => {
     if (err) throw err;
 
     if (results.length > 0) {
       const user = results[0];
-
+      const isMatch = await bcrypt.compare(password, user.Password);
+      console.log(user.Password);
+      if (!isMatch) {
+        return res.send('Invalid username or password');
+      }
       req.session.userId = user.UserID;    // Save the ID
       req.session.role = user.RoleName;    // Save the Role (Teacher/Student)
       req.session.name = user.FullName;
