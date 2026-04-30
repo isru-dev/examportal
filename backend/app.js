@@ -176,6 +176,35 @@ app.post('/register', async (req, res) => {
   });
 
 });
+function isLoggedIn(req, res, next) {
+  if (req.session.userId) {
+    next();
+  } else {
+    res.send("Please login first.");
+  }
+}
+function isStudent(req, res, next) {
+  if (req.session.role === 'Student') {
+    next();
+  } else {
+    res.redirect('/login.html');
+  }
+}
+function isTeacher(req, res, next) {
+  if (req.session.role === 'Teacher') {
+    next();
+  } else {
+     res.redirect('/login.html');
+  }
+}
+app.get('/studentdash', isLoggedIn, isStudent, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'studentdash.html'));
+});
+
+app.get('/teachersdash', isLoggedIn, isTeacher, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'teacherdashboard.html'));
+});
+/*
 app.get('/studentdash', (req, res) => {
   // Check if the user is logged in AND is a Teacher
   if (req.session.userId && req.session.role === 'Student') {
@@ -192,43 +221,46 @@ app.get('/teachersdash', (req, res) => {
     res.send("Please login as a Teacher to view this page.");
   }
 });
+*/
+app.post('/login', (req, res) => {
+    const { university_id, password } = req.body;
 
-app.post('/login', async (req, res) => {
+    // Join with Roles to get 'Student' or 'Teacher' string for redirection
+    const query = `
+        SELECT u.*, r.RoleName 
+        FROM Users u 
+        JOIN Roles r ON u.RoleID = r.RoleID
+        WHERE u.University_ID = ?`;
 
-  const { username, password } = req.body;
+    connection.query(query, [university_id], async (err, results) => {
+        if (err) return res.status(500).send("Database error");
 
-  const query = `
-        SELECT  u.*, r.RoleName 
-        FROM users u 
-        JOIN roles r ON u.RoleID = r.RoleID
-        WHERE u.Username = ?`;
+        if (results.length > 0) {
+            const user = results[0];
 
-  connection.query(query, [username, password], (err, results) => {
-    if (err) throw err;
+            // Compare the plain text password with the hashed password in DB
+            const isMatch = await bcrypt.compare(password, user.Password);
 
-    if (results.length > 0) {
-      const user = results[0];
-      const isMatch = await bcrypt.compare(password, user.Password);
-      console.log(user.Password);
-      if (!isMatch) {
-        return res.send('Invalid username or password');
-      }
-      req.session.userId = user.UserID;    // Save the ID
-      req.session.role = user.RoleName;    // Save the Role (Teacher/Student)
-      req.session.name = user.FullName;
-      console.log(req.session);
+            if (isMatch) {
+                // Set Session data
+                req.session.userId = user.UserID;
+                req.session.role = user.RoleName;
+                req.session.name = user.FullName;
+                req.session.dept = user.Department; // Useful for filtering exams later
 
-
-      // 2. Redirect based on the RoleName we got from the JOIN
-      if (user.RoleName === 'Teacher') {
-        res.redirect('/teachersdash');
-      } else if (user.RoleName === 'Student') {
-        res.redirect('/studentdash');
-      }
-    } else {
-      res.send('Invalid username or password');
-    }
-  });
+                // Redirect based on the pre-assigned role
+                if (user.RoleName === 'Teacher') {
+                    res.redirect('/teachersdash');
+                } else {
+                    res.redirect('/studentdash');
+                }
+            } else {
+                res.send("Invalid ID or Password.");
+            }
+        } else {
+            res.send("User not found. Please register first.");
+        }
+    });
 });
 
 
