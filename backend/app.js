@@ -44,78 +44,103 @@ app.get('/register', (req, res) => {
 
 
 app.get('/install', (req, res) => {
-  const roleTable = `
-    CREATE TABLE IF NOT EXISTS Roles (
-      RoleID INT PRIMARY KEY AUTO_INCREMENT,
-      RoleName VARCHAR(50) NOT NULL UNIQUE
+    // 1. Roles (Parent of Users)
+    const roleTable = `CREATE TABLE IF NOT EXISTS Roles (
+        RoleID INT PRIMARY KEY AUTO_INCREMENT,
+        RoleName VARCHAR(50) NOT NULL UNIQUE
     );`;
 
-  const usersTable = `
-    CREATE TABLE IF NOT EXISTS Users (
-      UserID INT PRIMARY KEY AUTO_INCREMENT,
-      FullName VARCHAR(255) NOT NULL,
-      Username VARCHAR(100) NOT NULL UNIQUE,
-      Password VARCHAR(255) NOT NULL,
-      RoleID INT,
-      FOREIGN KEY (RoleID) REFERENCES Roles(RoleID)
+    // 2. Users (Added Batch/Year for filtering)
+    const usersTable = `CREATE TABLE IF NOT EXISTS Users (
+        UserID INT PRIMARY KEY AUTO_INCREMENT,
+        FullName VARCHAR(255) NOT NULL,
+        University_ID VARCHAR(20) NOT NULL UNIQUE,
+        Password VARCHAR(255) NOT NULL,
+        RoleID INT,
+        Department VARCHAR(100), -- e.g., 'Computer Science'
+        section VARCHAR(50), 
+        Year INT,
+        FOREIGN KEY (RoleID) REFERENCES Roles(RoleID)
+    );`;
+// Add these to your /install route
+const studentMasterTable = `CREATE TABLE IF NOT EXISTS Student_Master (
+    ID_Number VARCHAR(20) PRIMARY KEY, -- e.g., 'UGR/1234/18'
+    FullName VARCHAR(255),
+    Department VARCHAR(100),
+    Batch VARCHAR(50),
+    Year INT
+);`;
+
+const teacherMasterTable = `CREATE TABLE IF NOT EXISTS Teacher_Master (
+    Employee_ID VARCHAR(20) PRIMARY KEY, -- e.g., 'EMP/5566'
+    FullName VARCHAR(255),
+    Department VARCHAR(100)
+);`;
+    // 3. Exams (Parent of Questions and Results)
+    const examsTable = `CREATE TABLE IF NOT EXISTS Exams (
+        ExamID INT PRIMARY KEY AUTO_INCREMENT,
+        TeacherID INT,
+        Title VARCHAR(255) NOT NULL,
+        CourseCode VARCHAR(50),
+        Department VARCHAR(100), -- e.g., 'Computer Science'
+        TimeLimit INT, -- minutes
+        TargetYear INT,
+        TargetBatch VARCHAR(50),
+        FOREIGN KEY (TeacherID) REFERENCES Users(UserID)
     );`;
 
-  const studentsTable = `
-    CREATE TABLE IF NOT EXISTS Students (
-      StudentID INT PRIMARY KEY AUTO_INCREMENT,
-      UserID INT,
-      FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+    // 4. Questions (Child of Exams)
+    const questionsTable = `CREATE TABLE IF NOT EXISTS Questions (
+        QuestionID INT PRIMARY KEY AUTO_INCREMENT,
+        ExamID INT,
+        QuestionText TEXT NOT NULL,
+        OptA VARCHAR(255), OptB VARCHAR(255), OptC VARCHAR(255), OptD VARCHAR(255),
+        CorrectOption CHAR(1),
+        FOREIGN KEY (ExamID) REFERENCES Exams(ExamID) ON DELETE CASCADE
     );`;
 
-  const teachersTable = `
-    CREATE TABLE IF NOT EXISTS Teachers (
-      TeacherID INT PRIMARY KEY AUTO_INCREMENT,
-      UserID INT,
-      FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+    // 5. Results (Child of Users and Exams)
+    const resultsTable = `CREATE TABLE IF NOT EXISTS Results (
+        ResultID INT PRIMARY KEY AUTO_INCREMENT,
+        UserID INT,
+        ExamID INT,
+        Score INT,
+        TotalQuestions INT,
+        DateTaken TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (UserID) REFERENCES Users(UserID),
+        FOREIGN KEY (ExamID) REFERENCES Exams(ExamID)
     );`;
 
-  // Execute queries in order (Roles must exist before Users)
-  connection.query(roleTable, (err) => {
-    if (err) console.error("Role Table Error:", err);
-
-    connection.query(usersTable, (err) => {
-      if (err) console.error("Users Table Error:", err);
-
-      connection.query(studentsTable, (err) => {
-        if (err) console.error("Students Table Error:", err);
-
-        connection.query(teachersTable, (err) => {
-          if (err) console.error("Teachers Table Error:", err);
-
-          // Seed initial roles if they don't exist
-          const seedRoles = "INSERT IGNORE INTO Roles (RoleName) VALUES ('Student'), ('Teacher')";
-          connection.query(seedRoles);
-
-          res.send("<h1>Database Schema Created Successfully!</h1>");
+    connection.query(roleTable, () => {
+        connection.query(usersTable, () => {
+            connection.query(examsTable, () => {
+                connection.query(questionsTable, () => {
+                    connection.query(resultsTable, () => {
+                        // Seed initial roles
+                        const seedRoles = "INSERT IGNORE INTO Roles (RoleName) VALUES ('Student'), ('Teacher')";
+                        connection.query(seedRoles, () => {
+                            res.send("<h1>Full Exam Portal Schema Installed Successfully!</h1>");
+                        });
+                    });
+                });
+            });
         });
-      });
     });
-  });
 });
 
 app.post('/register', async (req, res) => {
   console.log(req.body);
-  let firstName = req.body.first_name;
-  let lastName = req.body.last_name;
-  let username = req.body.username;
-  let role = req.body.role;
-  let password = req.body.password;
-
+  const { first_name, last_name, username, password, role, year, section,department } = req.body;
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   let RoleID = (role.toLowerCase() === 'student') ? 1 : 2;
   let fullName = `${firstName} ${lastName}`;
-  let userT = `INSERT INTO users (FullName,Username,password,RoleID)
-    VALUES (?,?,?,?);
+  let userT = `INSERT INTO users (FullName,Username,password,RoleID,Year, Batch, Department)
+    VALUES (?,?,?,?,?,?,?);
   `;
 
-  connection.query(userT, [fullName, username, hashedPassword, RoleID], (err, result) => {
+  connection.query(userT, [fullName, username, hashedPassword, RoleID,year, batch, department], (err, result) => {
     if (err) {
       console.log(err);
       return res.send("Error registering user");

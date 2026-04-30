@@ -3,33 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>REGISTER</title>
+  <title>REGISTER | University Portal</title>
   <link rel="Stylesheet" href="styles/register.css">
 </head>
 <body>
   <header>
-    <img src="images/schooll.jpg">
-
+    <img src="images/schooll.jpg" alt="University Logo">
   </header>
+
   <div class="container">
-  <form action="/register" method="post">
-    <h1>Crate account</h1>
-   <select class="role" name="role">
-    <option value="Student">Student</option>
-    <option value="Teacher">Teacher</option>
-</select><br>
-   <label for="first_name">FirstName</label><br>
-   <input class="" name="first_name" id="first_name" required><br>
-   <label>LastName</label><br>
-   <input class="" name="last_name"><br>
-   <label>UserName</label><br>
-   <input type="text"  name="username" required><br>
-   <label>Password</label><br>
-   <input type="password"  name="password" required><br>
-  <button type="submit" class="register">Register</button>
-  <p>do you have account?</p>
-  <a class="login" href="/login.html">Login</a>
- </form>
- </div>
+    <!-- Action points to your new validation logic -->
+    <form action="/register" method="post">
+      <h1>Create Account</h1>
+      
+      <label>Select Role</label>
+      <select class="role" name="role" required>
+        <option value="Student">Student</option>
+        <option value="Teacher">Teacher</option>
+      </select><br>
+
+      <label for="university_id">University ID</label><br>
+      <input type="text" name="university_id" id="university_id" placeholder="e.g. UGR/1234/18" required><br>
+
+      <label for="password">Set Password</label><br>
+      <input type="password" name="password" id="password" required><br>
+
+      <label for="confirm_password">Confirm Password</label><br>
+      <input type="password" name="confirm_password" id="confirm_password" required><br>
+
+      <button type="submit" class="register">Verify & Register</button>
+      
+      <p>Already have an account?</p>
+      <a class="login" href="/login.html">Login</a>
+    </form>
+  </div>
 </body>
 </html>

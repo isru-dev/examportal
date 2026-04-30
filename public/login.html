@@ -15,18 +15,16 @@
   <div class="container">
   <form action="/login" method="post">
     <h1>Login</h1>
-   <select class="role" name="role">
-    <option value="Student">Student</option>
-    <option value="Teacher">Teacher</option>
-</select><br>
-   
- <label>UserName</label><br>
-   <input type="text"  name="username" required><br>
-   <label>Password</label><br>
-   <input type="password"  name="password" required><br>
-  <button type="submit" class="register">Login</button>
- 
- </form>
- </div>
+    
+    <label>University ID</label><br>
+    <input type="text" name="university_id" placeholder="e.g. UGR/1234/18" required><br>
+    
+    <label>Password</label><br>
+    <input type="password" name="password" required><br>
+    
+    <button type="submit" class="register">Login</button>
+    <p>New user? <a href="/register.html">Register</a></p>
+  </form>
+</div>
 </body>
 </html>
