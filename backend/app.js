@@ -113,6 +113,8 @@ const teacherMasterTable = `CREATE TABLE IF NOT EXISTS Teacher_Master (
 
     connection.query(roleTable, () => {
         connection.query(usersTable, () => {
+          connection.query(studentMasterTable, () => {
+             connection.query(teacherMasterTable, () => {
             connection.query(examsTable, () => {
                 connection.query(questionsTable, () => {
                     connection.query(resultsTable, () => {
@@ -126,55 +128,71 @@ const teacherMasterTable = `CREATE TABLE IF NOT EXISTS Teacher_Master (
             });
         });
     });
+     });
+      });
 });
 
 app.post('/register', async (req, res) => {
-  console.log(req.body);
-  const { first_name, last_name, username, password, role, year, section,department } = req.body;
-  const saltRounds = 10;
-  const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const { university_id, password, confirm_password, role } = req.body;
 
-  let RoleID = (role.toLowerCase() === 'student') ? 1 : 2;
-  let fullName = `${firstName} ${lastName}`;
-  let userT = `INSERT INTO users (FullName,Username,password,RoleID,Year, Batch, Department)
-    VALUES (?,?,?,?,?,?,?);
-  `;
-
-  connection.query(userT, [fullName, username, hashedPassword, RoleID,year, batch, department], (err, result) => {
-    if (err) {
-      console.log(err);
-      return res.send("Error registering user");
+    // 1. Basic Validation
+    if (password !== confirm_password) {
+        return res.send("Passwords do not match.");
     }
 
-    let userId = result.insertId;
-    req.session.userId = userId;    // Save the ID
-    req.session.role = role;    // Save the Role (Teacher/Student)
-    req.session.name = fullName;
-    if (role.toLowerCase() === 'student') {
-      let studentT = `INSERT INTO Students (UserID)
-    VALUES (?);
-  `;
-      connection.query(studentT, [userId], (err) => {
-        if (err) console.log(err);
-        // res.send("Student Registered!");
-        res.redirect('/studentdash');
-      });
-    }
-    else {
-      let teachersT = `INSERT INTO Teachers (UserID)
-    VALUES (?);
-  `;
-      connection.query(teachersT, [userId], (err) => {
-        if (err) console.log(err);
-        // res.send("Teacher Registered!");
-        res.redirect('/teachersdash');
+    // 2. Check if user already exists in our app
+    const checkUser = "SELECT * FROM Users WHERE University_ID = ?";
+    connection.query(checkUser, [university_id], async (err, existingUsers) => {
+        if (existingUsers.length > 0) {
+            return res.send("This University ID is already registered. Please login.");
+        }
 
-      });
-    }
+        // 3. Verify against the Master List (The Gatekeeper)
+        const masterTable = (role === 'Student') ? 'Student_Master' : 'Teacher_Master';
+        const idCol = (role === 'Student') ? 'ID_Number' : 'Employee_ID';
 
+        connection.query(`SELECT * FROM ${masterTable} WHERE ${idCol} = ?`, [university_id], async (err, masterData) => {
+            if (err || masterData.length === 0) {
+                return res.send("Invalid University ID. Not found in official records.");
+            }
 
-  });
+            const officialInfo = masterData[0]; // Official name, dept, year, etc.
 
+            try {
+                // 4. Secure the password
+                const hashedPassword = await bcrypt.hash(password, 10);
+                const roleID = (role === 'Student') ? 1 : 2;
+
+                // 5. Save using official data from Master List
+                const insertQuery = `
+                    INSERT INTO Users (University_ID, FullName, Password, RoleID, Department, Year, Batch) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)`;
+                
+                const values = [
+                    university_id,
+                    officialInfo.FullName,
+                    hashedPassword,
+                    roleID,
+                    officialInfo.Department,
+                    officialInfo.Year || null, // Teachers won't have a year
+                    officialInfo.Batch || null  // Teachers won't have a batch
+                ];
+
+                connection.query(insertQuery, values, (err, result) => {
+                    if (err) return res.send("Error during registration: " + err.message);
+                    
+                    // Set Session
+                    req.session.userId = result.insertId;
+                    req.session.role = role;
+                    req.session.name = officialInfo.FullName;
+
+                    res.redirect(role === 'Student' ? '/studentdash' : '/teachersdash');
+                });
+            } catch (error) {
+                res.status(500).send("Server error during hashing.");
+            }
+        });
+    });
 });
 function isLoggedIn(req, res, next) {
   if (req.session.userId) {
