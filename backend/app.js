@@ -165,7 +165,7 @@ app.post('/register', async (req, res) => {
 
                 // 5. Save using official data from Master List
                 const insertQuery = `
-                    INSERT INTO Users (University_ID, FullName, Password, RoleID, Department, Year, Batch) 
+                    INSERT INTO Users (University_ID, FullName, Password, RoleID, Department, Batch, Year) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)`;
                 
                 const values = [
@@ -174,8 +174,8 @@ app.post('/register', async (req, res) => {
                     hashedPassword,
                     roleID,
                     officialInfo.Department,
-                    officialInfo.Year || null, // Teachers won't have a year
-                    officialInfo.Batch || null  // Teachers won't have a batch
+                    officialInfo.Batch || null , // Teachers won't have a batch
+                    officialInfo.Year || null // Teachers won't have a year
                 ];
 
                 connection.query(insertQuery, values, (err, result) => {
