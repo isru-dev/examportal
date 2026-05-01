@@ -80,3 +80,42 @@ color: white;
   grid-template-columns: 200px 200px;
 }
 }
+.exam-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #1b294e; /* Matching your theme */
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+    z-index: 1001; /* Above overlay */
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #64748B;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.modal-body p {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.close-btn {
+    background: #6a64d4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    float: right;
+    margin-top: 10px;
+}

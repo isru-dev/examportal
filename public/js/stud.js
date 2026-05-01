@@ -49,3 +49,40 @@ function startExam(id, title) {
         window.location.href = `/take-exam/${id}`;
     }
 }
+// --- NEW: View Details Function ---
+function viewDetails(examId) {
+    // Fetch specific exam details from the server
+    fetch(`/api/exam-details/${examId}`)
+        .then(res => res.json())
+        .then(exam => {
+            const modal = document.getElementById('examModal');
+            const detailsContent = document.getElementById('modalBody');
+
+            // Inject details into the modal
+            detailsContent.innerHTML = `
+                <p><strong>Title:</strong> ${exam.Title}</p>
+                <p><strong>Course Code:</strong> ${exam.CourseCode}</p>
+                <p><strong>Instructor:</strong> ${exam.TeacherName}</p>
+                <p><strong>Duration:</strong> ${exam.TimeLimit} Minutes</p>
+                <p><strong>Total Questions:</strong> ${exam.TotalQuestions}</p>
+                <p style="margin-top:10px; color:#ffcc00;">
+                    <i class="fa-solid fa-circle-info"></i> 
+                    Make sure you have a stable internet connection before starting.
+                </p>
+            `;
+
+            // Show the modal and overlay
+            modal.style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        })
+        .catch(err => alert("Error loading details."));
+}
+
+// Function to close modal
+function closeModal() {
+    document.getElementById('examModal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+}
+
+// Close modal if user clicks the overlay
+document.getElementById('overlay').addEventListener('click', closeModal);

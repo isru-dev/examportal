@@ -103,6 +103,19 @@
     Copyright © 2026 j University. All rights reserved.
     </h3>
   </div>
+  <!-- Modal Structure -->
+<div id="examModal" class="exam-modal" style="display:none;">
+    <div class="modal-header">
+        <h2>Exam Information</h2>
+        <i class="fa-solid fa-xmark" onclick="closeModal()" style="cursor:pointer;"></i>
+    </div>
+    <div id="modalBody" class="modal-body">
+        <!-- Details injected here -->
+    </div>
+    <div class="modal-footer">
+        <button onclick="closeModal()" class="close-btn">Close</button>
+    </div>
+</div>
   <script src="js/menu.js"></script>
    <script src="js/stud.js"></script>
 </body>
