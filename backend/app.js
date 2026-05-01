@@ -3,8 +3,13 @@ const mysql = require('mysql2');
 const path = require('path');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
+const fileUpload = require('express-fileupload');
+const streamifier = require('streamifier');
+const csv = require('csv-parser');
+
 
 let app = express();
+app.use(fileUpload());
 app.use(bodyParser.urlencoded({ extended: true }));//to change it to js object 
 const session = require('express-session');
 const { log } = require('console');
@@ -309,6 +314,148 @@ app.get('/userinfo', (req, res) => {
     console.log("No session found!");
     res.json({ loggedIn: false });
   }
+});
+
+
+app.get('/download-template', isLoggedIn, isTeacher, (req, res) => {
+    // The header row of the CSV file
+    const csvContent = "QuestionText,OptA,OptB,OptC,OptD,CorrectOption\n";
+    
+    // Set the headers so the browser knows it's a file download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=exam_template.csv');
+    
+    res.status(200).send(csvContent);
+});
+
+app.post('/create-exam-bulk', isLoggedIn, isTeacher, (req, res) => {
+   console.log(req.body);   
+    console.log(req.files);  
+    const { title, course_code, time_limit, target_year, target_batch } = req.body;
+    const teacherId = req.session.userId;
+    const dept = req.session.dept;
+
+    if (!req.files || !req.files.questionFile) {
+        return res.status(400).send("No CSV file provided.");
+    }
+
+    // 🔁 START TRANSACTION
+    connection.beginTransaction((err) => {
+        if (err) return res.status(500).send("Transaction error");
+
+        const examSql = `
+        INSERT INTO Exams (TeacherID, Title, CourseCode, TimeLimit, TargetYear, TargetBatch, Department)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+        connection.query(examSql, [teacherId, title, course_code, time_limit, target_year, target_batch, dept], (err, result) => {
+            if (err) {
+                return connection.rollback(() => {
+                    res.status(500).send("Error creating exam");
+                });
+            }
+
+            const examId = result.insertId;
+            const questions = [];
+
+            streamifier.createReadStream(req.files.questionFile.data)
+                .pipe(csv())
+                .on('data', (row) => {
+
+                    // 🧠 VALIDATION SECTION
+
+                    // 1. Empty row check
+                    if (!row.QuestionText && !row.OptA && !row.OptB && !row.OptC && !row.OptD) {
+                        return; // skip empty row
+                    }
+
+                    // 2. Missing fields
+                    if (!row.QuestionText || !row.OptA || !row.OptB || !row.OptC || !row.OptD || !row.CorrectOption) {
+                        return connection.rollback(() => {
+                            res.status(400).send("Missing fields in CSV");
+                        });
+                    }
+
+                    // 3. Validate CorrectOption
+                    const validOptions = ['A', 'B', 'C', 'D'];
+                    if (!validOptions.includes(row.CorrectOption.trim().toUpperCase())) {
+                        return connection.rollback(() => {
+                            res.status(400).send(`Invalid CorrectOption: ${row.CorrectOption}`);
+                        });
+                    }
+
+                    // ✔ If valid → push
+                    questions.push([
+                        examId,
+                        row.QuestionText,
+                        row.OptA,
+                        row.OptB,
+                        row.OptC,
+                        row.OptD,
+                        row.CorrectOption.toUpperCase()
+                    ]);
+                })
+                .on('end', () => {
+
+                    // ❌ No valid questions
+                    if (questions.length === 0) {
+                        return connection.rollback(() => {
+                            res.status(400).send("No valid questions found in CSV");
+                        });
+                    }
+
+                    const questionSql = `
+                    INSERT INTO Questions 
+                    (ExamID, QuestionText, OptA, OptB, OptC, OptD, CorrectOption) 
+                    VALUES ?`;
+
+                    connection.query(questionSql, [questions], (err) => {
+                        if (err) {
+                            return connection.rollback(() => {
+                                res.status(500).send("Error inserting questions");
+                            });
+                        }
+
+                        // ✅ COMMIT (everything successful)
+                        connection.commit((err) => {
+                            if (err) {
+                                return connection.rollback(() => {
+                                    res.status(500).send("Commit failed");
+                                });
+                            }
+
+                            res.send(`
+                                <script>
+                                    alert("Exam and ${questions.length} questions uploaded successfully!");
+                                    window.location.href = "/teachersdash";
+                                </script>
+                            `);
+                        });
+                    });
+                });
+        });
+    });
+});
+app.get('/teacher-exams', isLoggedIn, isTeacher, (req, res) => {
+    const teacherId = req.session.userId;
+
+    const sql = `
+        SELECT e.*, 
+        COUNT(q.QuestionID) as TotalQuestions,
+        CASE 
+            WHEN COUNT(q.QuestionID) = 0 THEN 'Draft'
+            WHEN e.CreatedAt > NOW() - INTERVAL 1 MINUTE THEN 'Just Published'
+            ELSE 'Active'
+        END AS Status
+        FROM Exams e 
+        LEFT JOIN Questions q ON e.ExamID = q.ExamID 
+        WHERE e.TeacherID = ? 
+        GROUP BY e.ExamID 
+        ORDER BY e.CreatedAt DESC`;
+
+    connection.query(sql, [teacherId], (err, results) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json(results);
+    });
 });
 
 app.listen(5000, (err) => {

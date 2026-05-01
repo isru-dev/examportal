@@ -1,0 +1,101 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+  background: #0F172A;
+  color: #E2E8F0;
+  padding: 30px;
+}
+
+/* Container */
+.container {
+  max-width: 1000px;
+  margin: auto;
+  background: #1E293B;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+}
+
+/* Title */
+h2 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Header */
+thead {
+  background: #334155;
+}
+
+th {
+  padding: 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+/* Rows */
+td {
+  padding: 12px;
+  border-bottom: 1px solid #475569;
+  font-size: 14px;
+}
+
+/* Hover effect */
+tr:hover {
+  background: #334155;
+}
+
+/* Status Badge */
+.status-badge {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Status colors */
+.status-draft {
+  background: #f39c12;
+  color: #fff;
+}
+
+.status-active {
+  background: #2ecc71;
+  color: #fff;
+}
+
+.status-just-published {
+  background: #3498db;
+  color: #fff;
+}
+
+/* Buttons */
+button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 5px;
+  background: #2563EB;
+  color: white;
+  transition: 0.2s;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+button[style] {
+  background: #e74c3c !important;
+}
