@@ -49,14 +49,14 @@ app.get('/register', (req, res) => {
 
 
 app.get('/install', (req, res) => {
-    // 1. Roles (Parent of Users)
-    const roleTable = `CREATE TABLE IF NOT EXISTS Roles (
+  // 1. Roles (Parent of Users)
+  const roleTable = `CREATE TABLE IF NOT EXISTS Roles (
         RoleID INT PRIMARY KEY AUTO_INCREMENT,
         RoleName VARCHAR(50) NOT NULL UNIQUE
     );`;
 
-    // 2. Users (Added Batch/Year for filtering)
-    const usersTable = `CREATE TABLE IF NOT EXISTS Users (
+  // 2. Users (Added Batch/Year for filtering)
+  const usersTable = `CREATE TABLE IF NOT EXISTS Users (
         UserID INT PRIMARY KEY AUTO_INCREMENT,
         FullName VARCHAR(255) NOT NULL,
         University_ID VARCHAR(20) NOT NULL UNIQUE,
@@ -67,8 +67,8 @@ app.get('/install', (req, res) => {
         Year INT,
         FOREIGN KEY (RoleID) REFERENCES Roles(RoleID)
     );`;
-// Add these to your /install route
-const studentMasterTable = `CREATE TABLE IF NOT EXISTS Student_Master (
+  // Add these to your /install route
+  const studentMasterTable = `CREATE TABLE IF NOT EXISTS Student_Master (
     ID_Number VARCHAR(20) PRIMARY KEY, -- e.g., 'UGR/1234/18'
     FullName VARCHAR(255),
     Department VARCHAR(100),
@@ -76,13 +76,13 @@ const studentMasterTable = `CREATE TABLE IF NOT EXISTS Student_Master (
     Year INT
 );`;
 
-const teacherMasterTable = `CREATE TABLE IF NOT EXISTS Teacher_Master (
+  const teacherMasterTable = `CREATE TABLE IF NOT EXISTS Teacher_Master (
     Employee_ID VARCHAR(20) PRIMARY KEY, -- e.g., 'EMP/5566'
     FullName VARCHAR(255),
     Department VARCHAR(100)
 );`;
-    // 3. Exams (Parent of Questions and Results)
-    const examsTable = `CREATE TABLE IF NOT EXISTS Exams (
+  // 3. Exams (Parent of Questions and Results)
+  const examsTable = `CREATE TABLE IF NOT EXISTS Exams (
         ExamID INT PRIMARY KEY AUTO_INCREMENT,
         TeacherID INT,
         Title VARCHAR(255) NOT NULL,
@@ -94,8 +94,8 @@ const teacherMasterTable = `CREATE TABLE IF NOT EXISTS Teacher_Master (
         FOREIGN KEY (TeacherID) REFERENCES Users(UserID)
     );`;
 
-    // 4. Questions (Child of Exams)
-    const questionsTable = `CREATE TABLE IF NOT EXISTS Questions (
+  // 4. Questions (Child of Exams)
+  const questionsTable = `CREATE TABLE IF NOT EXISTS Questions (
         QuestionID INT PRIMARY KEY AUTO_INCREMENT,
         ExamID INT,
         QuestionText TEXT NOT NULL,
@@ -104,8 +104,8 @@ const teacherMasterTable = `CREATE TABLE IF NOT EXISTS Teacher_Master (
         FOREIGN KEY (ExamID) REFERENCES Exams(ExamID) ON DELETE CASCADE
     );`;
 
-    // 5. Results (Child of Users and Exams)
-    const resultsTable = `CREATE TABLE IF NOT EXISTS Results (
+  // 5. Results (Child of Users and Exams)
+  const resultsTable = `CREATE TABLE IF NOT EXISTS Results (
         ResultID INT PRIMARY KEY AUTO_INCREMENT,
         UserID INT,
         ExamID INT,
@@ -116,88 +116,88 @@ const teacherMasterTable = `CREATE TABLE IF NOT EXISTS Teacher_Master (
         FOREIGN KEY (ExamID) REFERENCES Exams(ExamID)
     );`;
 
-    connection.query(roleTable, () => {
-        connection.query(usersTable, () => {
-          connection.query(studentMasterTable, () => {
-             connection.query(teacherMasterTable, () => {
-            connection.query(examsTable, () => {
-                connection.query(questionsTable, () => {
-                    connection.query(resultsTable, () => {
-                        // Seed initial roles
-                        const seedRoles = "INSERT IGNORE INTO Roles (RoleName) VALUES ('Student'), ('Teacher')";
-                        connection.query(seedRoles, () => {
-                            res.send("<h1>Full Exam Portal Schema Installed Successfully!</h1>");
-                        });
-                    });
+  connection.query(roleTable, () => {
+    connection.query(usersTable, () => {
+      connection.query(studentMasterTable, () => {
+        connection.query(teacherMasterTable, () => {
+          connection.query(examsTable, () => {
+            connection.query(questionsTable, () => {
+              connection.query(resultsTable, () => {
+                // Seed initial roles
+                const seedRoles = "INSERT IGNORE INTO Roles (RoleName) VALUES ('Student'), ('Teacher')";
+                connection.query(seedRoles, () => {
+                  res.send("<h1>Full Exam Portal Schema Installed Successfully!</h1>");
                 });
+              });
             });
+          });
         });
-    });
-     });
       });
+    });
+  });
 });
 
 app.post('/register', async (req, res) => {
-    const { university_id, password, confirm_password, role } = req.body;
+  const { university_id, password, confirm_password, role } = req.body;
 
-    // 1. Basic Validation
-    if (password !== confirm_password) {
-        return res.send("Passwords do not match.");
+  // 1. Basic Validation
+  if (password !== confirm_password) {
+    return res.send("Passwords do not match.");
+  }
+
+  // 2. Check if user already exists in our app
+  const checkUser = "SELECT * FROM Users WHERE University_ID = ?";
+  connection.query(checkUser, [university_id], async (err, existingUsers) => {
+    if (existingUsers.length > 0) {
+      return res.send("This University ID is already registered. Please login.");
     }
 
-    // 2. Check if user already exists in our app
-    const checkUser = "SELECT * FROM Users WHERE University_ID = ?";
-    connection.query(checkUser, [university_id], async (err, existingUsers) => {
-        if (existingUsers.length > 0) {
-            return res.send("This University ID is already registered. Please login.");
-        }
+    // 3. Verify against the Master List (The Gatekeeper)
+    const masterTable = (role === 'Student') ? 'Student_Master' : 'Teacher_Master';
+    const idCol = (role === 'Student') ? 'ID_Number' : 'Employee_ID';
 
-        // 3. Verify against the Master List (The Gatekeeper)
-        const masterTable = (role === 'Student') ? 'Student_Master' : 'Teacher_Master';
-        const idCol = (role === 'Student') ? 'ID_Number' : 'Employee_ID';
+    connection.query(`SELECT * FROM ${masterTable} WHERE ${idCol} = ?`, [university_id], async (err, masterData) => {
+      if (err || masterData.length === 0) {
+        return res.send("Invalid University ID. Not found in official records.");
+      }
 
-        connection.query(`SELECT * FROM ${masterTable} WHERE ${idCol} = ?`, [university_id], async (err, masterData) => {
-            if (err || masterData.length === 0) {
-                return res.send("Invalid University ID. Not found in official records.");
-            }
+      const officialInfo = masterData[0]; // Official name, dept, year, etc.
 
-            const officialInfo = masterData[0]; // Official name, dept, year, etc.
+      try {
+        // 4. Secure the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const roleID = (role === 'Student') ? 1 : 2;
 
-            try {
-                // 4. Secure the password
-                const hashedPassword = await bcrypt.hash(password, 10);
-                const roleID = (role === 'Student') ? 1 : 2;
-
-                // 5. Save using official data from Master List
-                const insertQuery = `
+        // 5. Save using official data from Master List
+        const insertQuery = `
                     INSERT INTO Users (University_ID, FullName, Password, RoleID, Department, Batch, Year) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)`;
-                
-                const values = [
-                    university_id,
-                    officialInfo.FullName,
-                    hashedPassword,
-                    roleID,
-                    officialInfo.Department,
-                    officialInfo.Batch || null , // Teachers won't have a batch
-                    officialInfo.Year || null // Teachers won't have a year
-                ];
 
-                connection.query(insertQuery, values, (err, result) => {
-                    if (err) return res.send("Error during registration: " + err.message);
-                    
-                    // Set Session
-                    req.session.userId = result.insertId;
-                    req.session.role = role;
-                    req.session.name = officialInfo.FullName;
+        const values = [
+          university_id,
+          officialInfo.FullName,
+          hashedPassword,
+          roleID,
+          officialInfo.Department,
+          officialInfo.Batch || null, // Teachers won't have a batch
+          officialInfo.Year || null // Teachers won't have a year
+        ];
 
-                    res.redirect(role === 'Student' ? '/studentdash' : '/teachersdash');
-                });
-            } catch (error) {
-                res.status(500).send("Server error during hashing.");
-            }
+        connection.query(insertQuery, values, (err, result) => {
+          if (err) return res.send("Error during registration: " + err.message);
+
+          // Set Session
+          req.session.userId = result.insertId;
+          req.session.role = role;
+          req.session.name = officialInfo.FullName;
+
+          res.redirect(role === 'Student' ? '/studentdash' : '/teachersdash');
         });
+      } catch (error) {
+        res.status(500).send("Server error during hashing.");
+      }
     });
+  });
 });
 function isLoggedIn(req, res, next) {
   if (req.session.userId) {
@@ -217,7 +217,7 @@ function isTeacher(req, res, next) {
   if (req.session.role === 'Teacher') {
     next();
   } else {
-     res.redirect('/login.html');
+    res.redirect('/login.html');
   }
 }
 app.get('/studentdash', isLoggedIn, isStudent, (req, res) => {
@@ -246,44 +246,45 @@ app.get('/teachersdash', (req, res) => {
 });
 */
 app.post('/login', (req, res) => {
-    const { university_id, password } = req.body;
+  const { university_id, password } = req.body;
 
-    // Join with Roles to get 'Student' or 'Teacher' string for redirection
-    const query = `
+  // Join with Roles to get 'Student' or 'Teacher' string for redirection
+  const query = `
         SELECT u.*, r.RoleName 
         FROM Users u 
         JOIN Roles r ON u.RoleID = r.RoleID
         WHERE u.University_ID = ?`;
 
-    connection.query(query, [university_id], async (err, results) => {
-        if (err) return res.status(500).send("Database error");
+  connection.query(query, [university_id], async (err, results) => {
+    if (err) return res.status(500).send("Database error");
 
-        if (results.length > 0) {
-            const user = results[0];
+    if (results.length > 0) {
+      const user = results[0];
 
-            // Compare the plain text password with the hashed password in DB
-            const isMatch = await bcrypt.compare(password, user.Password);
+      // Compare the plain text password with the hashed password in DB
+      const isMatch = await bcrypt.compare(password, user.Password);
 
-            if (isMatch) {
-                // Set Session data
-                req.session.userId = user.UserID;
-                req.session.role = user.RoleName;
-                req.session.name = user.FullName;
-                req.session.dept = user.Department; // Useful for filtering exams later
-
-                // Redirect based on the pre-assigned role
-                if (user.RoleName === 'Teacher') {
-                    res.redirect('/teachersdash');
-                } else {
-                    res.redirect('/studentdash');
-                }
-            } else {
-                res.send("Invalid ID or Password.");
-            }
+      if (isMatch) {
+        // Set Session data
+        req.session.userId = user.UserID;
+        req.session.role = user.RoleName;
+        req.session.name = user.FullName;
+        req.session.dept = user.Department; // Useful for filtering exams later
+        req.session.year = user.Year;       // Save Year
+        req.session.batch = user.Batch;
+        // Redirect based on the pre-assigned role
+        if (user.RoleName === 'Teacher') {
+          res.redirect('/teachersdash');
         } else {
-            res.send("User not found. Please register first.");
+          res.redirect('/studentdash');
         }
-    });
+      } else {
+        res.send("Invalid ID or Password.");
+      }
+    } else {
+      res.send("User not found. Please register first.");
+    }
+  });
 });
 
 
@@ -318,127 +319,127 @@ app.get('/userinfo', (req, res) => {
 
 
 app.get('/download-template', isLoggedIn, isTeacher, (req, res) => {
-    // The header row of the CSV file
-    const csvContent = "QuestionText,OptA,OptB,OptC,OptD,CorrectOption\n";
-    
-    // Set the headers so the browser knows it's a file download
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=exam_template.csv');
-    
-    res.status(200).send(csvContent);
+  // The header row of the CSV file
+  const csvContent = "QuestionText,OptA,OptB,OptC,OptD,CorrectOption\n";
+
+  // Set the headers so the browser knows it's a file download
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=exam_template.csv');
+
+  res.status(200).send(csvContent);
 });
 
 app.post('/create-exam-bulk', isLoggedIn, isTeacher, (req, res) => {
-   console.log(req.body);   
-    console.log(req.files);  
-    const { title, course_code, time_limit, target_year, target_batch } = req.body;
-    const teacherId = req.session.userId;
-    const dept = req.session.dept;
+  console.log(req.body);
+  console.log(req.files);
+  const { title, course_code, time_limit, target_year, target_batch } = req.body;
+  const teacherId = req.session.userId;
+  const dept = req.session.dept;
 
-    if (!req.files || !req.files.questionFile) {
-        return res.status(400).send("No CSV file provided.");
-    }
+  if (!req.files || !req.files.questionFile) {
+    return res.status(400).send("No CSV file provided.");
+  }
 
-    // 🔁 START TRANSACTION
-    connection.beginTransaction((err) => {
-        if (err) return res.status(500).send("Transaction error");
+  // 🔁 START TRANSACTION
+  connection.beginTransaction((err) => {
+    if (err) return res.status(500).send("Transaction error");
 
-        const examSql = `
+    const examSql = `
         INSERT INTO Exams (TeacherID, Title, CourseCode, TimeLimit, TargetYear, TargetBatch, Department)
         VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-        connection.query(examSql, [teacherId, title, course_code, time_limit, target_year, target_batch, dept], (err, result) => {
-            if (err) {
-                return connection.rollback(() => {
-                    res.status(500).send("Error creating exam");
-                });
-            }
+    connection.query(examSql, [teacherId, title, course_code, time_limit, target_year, target_batch, dept], (err, result) => {
+      if (err) {
+        return connection.rollback(() => {
+          res.status(500).send("Error creating exam");
+        });
+      }
 
-            const examId = result.insertId;
-            const questions = [];
+      const examId = result.insertId;
+      const questions = [];
 
-            streamifier.createReadStream(req.files.questionFile.data)
-                .pipe(csv())
-                .on('data', (row) => {
+      streamifier.createReadStream(req.files.questionFile.data)
+        .pipe(csv())
+        .on('data', (row) => {
 
-                    // 🧠 VALIDATION SECTION
+          // 🧠 VALIDATION SECTION
 
-                    // 1. Empty row check
-                    if (!row.QuestionText && !row.OptA && !row.OptB && !row.OptC && !row.OptD) {
-                        return; // skip empty row
-                    }
+          // 1. Empty row check
+          if (!row.QuestionText && !row.OptA && !row.OptB && !row.OptC && !row.OptD) {
+            return; // skip empty row
+          }
 
-                    // 2. Missing fields
-                    if (!row.QuestionText || !row.OptA || !row.OptB || !row.OptC || !row.OptD || !row.CorrectOption) {
-                        return connection.rollback(() => {
-                            res.status(400).send("Missing fields in CSV");
-                        });
-                    }
+          // 2. Missing fields
+          if (!row.QuestionText || !row.OptA || !row.OptB || !row.OptC || !row.OptD || !row.CorrectOption) {
+            return connection.rollback(() => {
+              res.status(400).send("Missing fields in CSV");
+            });
+          }
 
-                    // 3. Validate CorrectOption
-                    const validOptions = ['A', 'B', 'C', 'D'];
-                    if (!validOptions.includes(row.CorrectOption.trim().toUpperCase())) {
-                        return connection.rollback(() => {
-                            res.status(400).send(`Invalid CorrectOption: ${row.CorrectOption}`);
-                        });
-                    }
+          // 3. Validate CorrectOption
+          const validOptions = ['A', 'B', 'C', 'D'];
+          if (!validOptions.includes(row.CorrectOption.trim().toUpperCase())) {
+            return connection.rollback(() => {
+              res.status(400).send(`Invalid CorrectOption: ${row.CorrectOption}`);
+            });
+          }
 
-                    // ✔ If valid → push
-                    questions.push([
-                        examId,
-                        row.QuestionText,
-                        row.OptA,
-                        row.OptB,
-                        row.OptC,
-                        row.OptD,
-                        row.CorrectOption.toUpperCase()
-                    ]);
-                })
-                .on('end', () => {
+          // ✔ If valid → push
+          questions.push([
+            examId,
+            row.QuestionText,
+            row.OptA,
+            row.OptB,
+            row.OptC,
+            row.OptD,
+            row.CorrectOption.toUpperCase()
+          ]);
+        })
+        .on('end', () => {
 
-                    // ❌ No valid questions
-                    if (questions.length === 0) {
-                        return connection.rollback(() => {
-                            res.status(400).send("No valid questions found in CSV");
-                        });
-                    }
+          // ❌ No valid questions
+          if (questions.length === 0) {
+            return connection.rollback(() => {
+              res.status(400).send("No valid questions found in CSV");
+            });
+          }
 
-                    const questionSql = `
+          const questionSql = `
                     INSERT INTO Questions 
                     (ExamID, QuestionText, OptA, OptB, OptC, OptD, CorrectOption) 
                     VALUES ?`;
 
-                    connection.query(questionSql, [questions], (err) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                res.status(500).send("Error inserting questions");
-                            });
-                        }
+          connection.query(questionSql, [questions], (err) => {
+            if (err) {
+              return connection.rollback(() => {
+                res.status(500).send("Error inserting questions");
+              });
+            }
 
-                        // ✅ COMMIT (everything successful)
-                        connection.commit((err) => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    res.status(500).send("Commit failed");
-                                });
-                            }
+            // ✅ COMMIT (everything successful)
+            connection.commit((err) => {
+              if (err) {
+                return connection.rollback(() => {
+                  res.status(500).send("Commit failed");
+                });
+              }
 
-                            res.send(`
+              res.send(`
                                 <script>
                                     alert("Exam and ${questions.length} questions uploaded successfully!");
                                     window.location.href = "/teachersdash";
                                 </script>
                             `);
-                        });
-                    });
-                });
+            });
+          });
         });
     });
+  });
 });
 app.get('/teacher-exams', isLoggedIn, isTeacher, (req, res) => {
-    const teacherId = req.session.userId;
+  const teacherId = req.session.userId;
 
-    const sql = `
+  const sql = `
         SELECT e.*, 
         COUNT(q.QuestionID) as TotalQuestions,
         CASE 
@@ -452,10 +453,45 @@ app.get('/teacher-exams', isLoggedIn, isTeacher, (req, res) => {
         GROUP BY e.ExamID 
         ORDER BY e.CreatedAt DESC`;
 
-    connection.query(sql, [teacherId], (err, results) => {
-        if (err) return res.status(500).json({ error: "Database error" });
-        res.json(results);
-    });
+  connection.query(sql, [teacherId], (err, results) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    res.json(results);
+  });
+});
+
+
+app.get('/api/exam-details/:id', isLoggedIn, (req, res) => {
+  const examId = req.params.id;
+  const sql = `
+        SELECT e.*, u.FullName as TeacherName, 
+        (SELECT COUNT(*) FROM Questions WHERE ExamID = e.ExamID) as TotalQuestions
+        FROM Exams e
+        JOIN Users u ON e.TeacherID = u.UserID
+        WHERE e.ExamID = ?`;
+
+  connection.query(sql, [examId], (err, result) => {
+    if (err || result.length === 0) return res.status(404).send("Exam not found");
+    res.json(result[0]);
+  });
+});
+
+app.get('/available-exams', isLoggedIn, isStudent, (req, res) => {
+  // These values were stored in the session during login from the Master List
+  const { dept, year, batch } = req.session;
+  console.log("Session Data:", req.session.dept, req.session.year, req.session.batch);
+  const sql = `
+        SELECT e.ExamID, e.Title, e.CourseCode, e.TimeLimit, t.FullName as TeacherName
+        FROM Exams e
+        JOIN Users t ON e.TeacherID = t.UserID
+        WHERE e.Department = ? 
+          AND e.TargetYear = ? 
+          AND e.TargetBatch = ?
+          AND (SELECT COUNT(*) FROM Questions q WHERE q.ExamID = e.ExamID) > 0`;
+
+  connection.query(sql, [dept, year, batch], (err, results) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    res.json(results);
+  });
 });
 
 app.listen(5000, (err) => {

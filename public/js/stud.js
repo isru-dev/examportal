@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(exams => {
             if (exams.length === 0) {
-                examContainer.innerHTML = '<p style="text-align: center; color: white; padding: 20px;">No exams scheduled for your batch.</p>';
+                examContainer.innerHTML = '<p style="text-align: center; color: black; padding: 20px;">No exams scheduled for your batch.</p>';
                 return;
             }
 
