@@ -1,0 +1,118 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: #0F172A; /* dark academic */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Main container */
+.container {
+  width: 100%;
+  max-width: 600px;
+  background: #1E293B;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+  color: #E2E8F0;
+}
+
+/* Title */
+.container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #F8FAFC;
+}
+
+/* Form sections */
+.exam-info,
+.upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Inputs */
+input,
+select {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: #334155;
+  color: #F1F5F9;
+}
+
+/* Placeholder color */
+input::placeholder {
+  color: #94A3B8;
+}
+
+/* File input */
+input[type="file"] {
+  background: #334155;
+  padding: 10px;
+}
+
+/* Divider */
+hr {
+  margin: 20px 0;
+  border: none;
+  height: 1px;
+  background: #475569;
+}
+
+/* Upload section text */
+.upload-section h3 {
+  margin-bottom: 5px;
+}
+
+.upload-section p {
+  font-size: 14px;
+  color: #CBD5F5;
+}
+
+/* Link */
+.upload-section a {
+  text-decoration: none;
+  color: #60A5FA;
+}
+
+.upload-section a:hover {
+  text-decoration: underline;
+}
+
+/* Button */
+button.register {
+  margin-top: 20px;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #2563EB;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+/* Hover effect */
+button.register:hover {
+  background: #1D4ED8;
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container {
+    margin: 10px;
+    padding: 20px;
+  }
+}
