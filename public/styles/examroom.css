@@ -1,0 +1,141 @@
+/* --- Exam Room Layout --- */
+:root {
+    --primary-blue: #1b294e;
+    --accent-purple: #6a64d4;
+    --text-light: #f8fafc;
+    --danger-red: #e74c3c;
+    --card-bg: #243461;
+}
+
+body {
+    background-color: var(--primary-blue);
+    color: var(--text-light);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Fixed Header with Timer --- */
+.exam-header {
+    position: sticky;
+    top: 0;
+    background-color: var(--card-bg);
+    padding: 15px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--accent-purple);
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+#examTitle {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+#timer-container {
+    font-size: 1.2rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#timer {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+/* --- Question Cards --- */
+.questions-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.question-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+}
+
+.question-card:hover {
+    transform: translateY(-2px);
+}
+
+.question-card p {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+/* --- Styled Radio Buttons --- */
+.options {
+    display: grid;
+    gap: 12px;
+}
+
+.options label {
+    display: block;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.options label:hover {
+    background: rgba(106, 100, 212, 0.1);
+    border-color: var(--accent-purple);
+}
+
+.options input[type="radio"] {
+    margin-right: 12px;
+    accent-color: var(--accent-purple);
+    transform: scale(1.2);
+}
+
+/* Change background when selected */
+.options input[type="radio"]:checked + span {
+    color: var(--accent-purple);
+}
+
+/* --- Submit Button --- */
+.submit-btn {
+    display: block;
+    width: 200px;
+    margin: 40px auto 100px;
+    padding: 15px;
+    background-color: var(--accent-purple);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.submit-btn:hover {
+    background-color: #5851c2;
+    transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .exam-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .question-card {
+        padding: 15px;
+    }
+}
