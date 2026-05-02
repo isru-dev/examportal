@@ -68,5 +68,4 @@ examportal/
 
 
 
-**Should I add a "Known Issues" section to the README regarding the departmental filtering we discussed earlier?**
-```
+
