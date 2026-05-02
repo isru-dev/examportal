@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const fileUpload = require('express-fileupload');
 const streamifier = require('streamifier');
 const csv = require('csv-parser');
+// Tell Express to use EJS
 
 
 let app = express();
@@ -13,7 +14,10 @@ app.use(fileUpload());
 app.use(bodyParser.urlencoded({ extended: true }));//to change it to js object 
 const session = require('express-session');
 const { log } = require('console');
+app.set('view engine', 'ejs');
 
+// Tell Express where your views (templates) are
+app.set('views', path.join(__dirname, 'views'));
 // This tells Express to handle the "VIP Wristbands" (Sessions)
 app.use(session({
   secret: 'isru_secret_key', // A random string used to sign the session cookie
@@ -93,7 +97,15 @@ app.get('/install', (req, res) => {
         TargetBatch VARCHAR(50),
         FOREIGN KEY (TeacherID) REFERENCES Users(UserID)
     );`;
-
+ const ExamAttempts= ` CREATE TABLE IF NOT EXISTS ExamAttempts (
+    AttemptID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT,
+    ExamID INT,
+    StartTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    IsSubmitted BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    FOREIGN KEY (ExamID) REFERENCES Exams(ExamID)
+);`;
   // 4. Questions (Child of Exams)
   const questionsTable = `CREATE TABLE IF NOT EXISTS Questions (
         QuestionID INT PRIMARY KEY AUTO_INCREMENT,
@@ -115,12 +127,14 @@ app.get('/install', (req, res) => {
         FOREIGN KEY (UserID) REFERENCES Users(UserID),
         FOREIGN KEY (ExamID) REFERENCES Exams(ExamID)
     );`;
+ 
 
   connection.query(roleTable, () => {
     connection.query(usersTable, () => {
       connection.query(studentMasterTable, () => {
         connection.query(teacherMasterTable, () => {
           connection.query(examsTable, () => {
+             connection.query(ExamAttempts, () => {
             connection.query(questionsTable, () => {
               connection.query(resultsTable, () => {
                 // Seed initial roles
@@ -131,6 +145,7 @@ app.get('/install', (req, res) => {
               });
             });
           });
+        });
         });
       });
     });
