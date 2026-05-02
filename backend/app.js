@@ -18,6 +18,7 @@ app.set('view engine', 'ejs');
 
 // Tell Express where your views (templates) are
 app.set('views', path.join(__dirname, 'views'));
+app.use(express.static('public'));
 // This tells Express to handle the "VIP Wristbands" (Sessions)
 app.use(session({
   secret: 'isru_secret_key', // A random string used to sign the session cookie
@@ -592,7 +593,122 @@ app.get('/take-exam/:id', isLoggedIn, isStudent, (req, res) => {
     );
 });
 
+app.post('/submit-exam', isLoggedIn, isStudent, (req, res) => {
+    const { examId } = req.body;
+    const userId = req.session.userId;
+    const studentAnswers = req.body; // Contains { examId: '1', q101: 'A', q102: 'C', ... }
 
+    // 1. Fetch the correct answers from the database
+    const sql = "SELECT QuestionID, CorrectOption FROM Questions WHERE ExamID = ?";
+    
+    connection.query(sql, [examId], (err, questions) => {
+        if (err) return res.status(500).send("Error grading exam.");
+
+        let score = 0;
+        const totalQuestions = questions.length;
+
+        // 2. Compare student answers to correct options
+        questions.forEach(q => {
+            const studentChoice = studentAnswers[`q${q.QuestionID}`];
+            if (studentChoice === q.CorrectOption) {
+                score++;
+            }
+        });
+
+        // Calculate percentage (optional)
+        const percentage = ((score / totalQuestions) * 100).toFixed(2);
+
+        // 3. Save the result and mark the attempt as submitted
+        const resultSql = `
+            INSERT INTO Results (UserID, ExamID, Score, TotalMarks, Percentage) 
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
+        connection.query(resultSql, [userId, examId, score, totalQuestions, percentage], (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Error saving results.");
+            }
+
+            // 4. Update the Attempt table to prevent re-entry
+            connection.query(
+                "UPDATE ExamAttempts SET IsSubmitted = TRUE WHERE UserID = ? AND ExamID = ?",
+                [userId, examId]
+            );
+
+            // Send student to a "Success" page or back to dashboard
+           res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body { 
+                background-color: #1b294e; 
+                color: #f8fafc; 
+                font-family: 'Segoe UI', sans-serif; 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                height: 100vh; 
+                margin: 0; 
+            }
+            .success-card { 
+                background: #243461; 
+                padding: 40px; 
+                border-radius: 15px; 
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+                text-align: center; 
+                max-width: 400px;
+                border-top: 4px solid #6a64d4;
+            }
+            h1 { color: #6a64d4; margin-bottom: 10px; }
+            .score-circle {
+                width: 120px;
+                height: 120px;
+                border-radius: 50%;
+                background: rgba(106, 100, 212, 0.1);
+                border: 2px solid #6a64d4;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                margin: 20px auto;
+            }
+            .score-num { font-size: 1.8rem; font-weight: bold; }
+            .percentage { color: #f8fafc; opacity: 0.8; font-size: 0.9rem; }
+            .btn { 
+                display: inline-block; 
+                margin-top: 25px; 
+                padding: 12px 25px; 
+                background: #6a64d4; 
+                color: white; 
+                text-decoration: none; 
+                border-radius: 25px; 
+                font-weight: bold;
+                transition: transform 0.2s;
+            }
+            .btn:hover { transform: scale(1.05); background: #5851c2; }
+        </style>
+    </head>
+    <body>
+        <div class="success-card">
+            <h1>Well Done!</h1>
+            <p>Your exam has been recorded.</p>
+            
+            <div class="score-circle">
+                <div class="score-num">${score} / ${totalQuestions}</div>
+                <div class="percentage">${percentage}%</div>
+            </div>
+
+            <a href="/studentdash" class="btn">Return to Dashboard</a>
+        </div>
+    </body>
+    </html>
+`);
+        });
+    });
+});
 app.listen(5000, (err) => {
   if (err)
     console.log(err);

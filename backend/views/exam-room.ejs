@@ -1,41 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exam Room - <%= typeof title !== 'undefined' ? title : 'Examination' %></title>
+  <title>Exam Room - <%= typeof title !=='undefined' ? title : 'Examination' %>
+  </title>
   <!-- Link your existing student.css for styling -->
-  <link rel="stylesheet" href="../../public/styles/examroom.css"> 
+  <link rel="stylesheet" href="/styles/examroom.css">
 </head>
+
 <body>
 
   <div class="exam-header">
-      <h1 id="examTitle">Exam in Progress</h1>
-      <div id="timer-container">
-          Time Remaining: <span id="timer">--:--</span>
-      </div>
+    <h1 id="examTitle">Exam in Progress</h1>
+    <div id="timer-container">
+      Time Remaining: <span id="timer">--:--</span>
+    </div>
   </div>
 
   <form id="examForm" action="/submit-exam" method="POST">
-      <!-- Hidden input to pass the exam ID back to the server -->
-      <input type="hidden" name="examId" value="<%= examId %>">
+    <!-- Hidden input to pass the exam ID back to the server -->
+    <input type="hidden" name="examId" value="<%= examId %>">
 
-      <!-- Questions Loop -->
-      <div class="questions-container">
-          <% questions.forEach((q, index) => { %>
-              <div class="question-card">
-                  <p><strong>Q<%= index + 1 %>:</strong> <%= q.QuestionText %></p>
-                  <div class="options">
-                      <label><input type="radio" name="q<%= q.QuestionID %>" value="A"> <%= q.OptA %></label><br>
-                      <label><input type="radio" name="q<%= q.QuestionID %>" value="B"> <%= q.OptB %></label><br>
-                      <label><input type="radio" name="q<%= q.QuestionID %>" value="C"> <%= q.OptC %></label><br>
-                      <label><input type="radio" name="q<%= q.QuestionID %>" value="D"> <%= q.OptD %></label>
-                  </div>
-              </div>
-          <% }) %>
-      </div>
+    <!-- Questions Loop -->
+    <div class="questions-container">
+      <% questions.forEach((q, index)=> { %>
+        <div class="question-card">
+          <p><strong>Q<%= index + 1 %>:</strong>
+            <%= q.QuestionText %>
+          </p>
+          <div class="options">
+            <label><input type="radio" name="q<%= q.QuestionID %>" value="A">
+              <%= q.OptA %>
+            </label><br>
+            <label><input type="radio" name="q<%= q.QuestionID %>" value="B">
+              <%= q.OptB %>
+            </label><br>
+            <label><input type="radio" name="q<%= q.QuestionID %>" value="C">
+              <%= q.OptC %>
+            </label><br>
+            <label><input type="radio" name="q<%= q.QuestionID %>" value="D">
+              <%= q.OptD %>
+            </label>
+          </div>
+        </div>
+        <% }) %>
+    </div>
 
-      <button type="submit" class="submit-btn">Finalize and Submit</button>
+    <button type="submit" class="submit-btn">Finalize and Submit</button>
   </form>
 
   <!-- IMPORTANT: JavaScript must be inside these script tags -->
@@ -45,31 +58,32 @@
     const examForm = document.getElementById('examForm');
 
     if (!timerDisplay || !examForm) {
-        console.error("Timer or form not found");
+      console.error("Timer or form not found");
     } else {
-        const countdown = setInterval(() => {
-            timeLeft = Math.max(0, timeLeft);
+      const countdown = setInterval(() => {
+        timeLeft = Math.max(0, timeLeft);
 
-            let minutes = Math.floor(timeLeft / 60);
-            let seconds = timeLeft % 60;
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
 
-            timerDisplay.innerHTML = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        timerDisplay.innerHTML = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 
-            // Visual warning when less than 2 minutes remain
-            if (timeLeft < 120) {
-                timerDisplay.style.color = "red";
-                timerDisplay.style.fontWeight = "bold";
-            }
+        // Visual warning when less than 2 minutes remain
+        if (timeLeft < 120) {
+          timerDisplay.style.color = "red";
+          timerDisplay.style.fontWeight = "bold";
+        }
 
-            if (timeLeft === 0) {
-                clearInterval(countdown);
-                alert("Time is up! Submitting your exam.");
-                examForm.submit();
-            }
+        if (timeLeft === 0) {
+          clearInterval(countdown);
+          alert("Time is up! Submitting your exam.");
+          examForm.submit();
+        }
 
-            timeLeft--;
-        }, 1000);
+        timeLeft--;
+      }, 1000);
     }
   </script>
 </body>
+
 </html>
