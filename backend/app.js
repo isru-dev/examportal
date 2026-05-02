@@ -494,6 +494,90 @@ app.get('/available-exams', isLoggedIn, isStudent, (req, res) => {
   });
 });
 
+app.get('/take-exam/:id', isLoggedIn, isStudent, (req, res) => {
+    const examId = req.params.id;
+    const userId = req.session.userId;
+
+    // 1. Get exam + validate access
+    const examSql = `
+        SELECT * FROM Exams 
+        WHERE ExamID = ?
+        AND Department = ?
+        AND TargetYear = ?
+        AND TargetBatch = ?
+    `;
+
+    connection.query(
+        examSql,
+        [examId, req.session.dept, req.session.year, req.session.batch],
+        (err, examResult) => {
+
+            if (err) return res.status(500).send("Database error");
+            if (examResult.length === 0) {
+                return res.send("Unauthorized access");
+            }
+
+            const exam = examResult[0];
+
+            // 2. Check attempt
+            const attemptSql = `
+                SELECT StartTime FROM ExamAttempts 
+                WHERE UserID = ? AND ExamID = ?
+            `;
+
+            connection.query(attemptSql, [userId, examId], (err, attempts) => {
+
+                if (err) return res.status(500).send("Database error");
+
+                let startTime;
+
+                if (attempts.length === 0) {
+                    startTime = new Date();
+
+                    connection.query(
+                        "INSERT INTO ExamAttempts (UserID, ExamID, StartTime) VALUES (?, ?, ?)",
+                        [userId, examId, startTime],
+                        (err) => {
+                            if (err) console.log("Insert attempt error:", err);
+                        }
+                    );
+                } else {
+                    startTime = new Date(attempts[0].StartTime);
+                }
+
+                // 3. Calculate time
+                const currentTime = new Date();
+                const secondsElapsed = Math.floor((currentTime - startTime) / 1000);
+                const totalSecondsAllowed = exam.TimeLimit * 60;
+                const remainingSeconds = totalSecondsAllowed - secondsElapsed;
+
+                if (remainingSeconds <= 0) {
+                    return res.send("<h1>Time Expired</h1>");
+                }
+
+                // 4. Load questions
+                const qSql = `
+                    SELECT QuestionID, QuestionText, OptA, OptB, OptC, OptD
+                    FROM Questions WHERE ExamID = ?
+                `;
+
+                connection.query(qSql, [examId], (err, questions) => {
+
+                    if (err) return res.status(500).send("Error loading questions");
+
+                    res.render('exam-room', {
+                        questions,
+                        examId,
+                        timerSeconds: remainingSeconds
+                    });
+
+                });
+            });
+        }
+    );
+});
+
+
 app.listen(5000, (err) => {
   if (err)
     console.log(err);
