@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gradebook</title>
+    <link rel="stylesheet" href="/styles/teacher.css"> <!-- Use your existing professional CSS -->
+    <style>
+        .grade-table {
+            width: 90%;
+            margin: 40px auto;
+            border-collapse: collapse;
+            background: #243461; /* Matching your dark dashboard theme */
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .grade-table th, .grade-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .grade-table th {
+            background-color: #6a64d4;
+            color: white;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        .grade-table tr:hover {
+            background: rgba(106, 100, 212, 0.1);
+        }
+        .percentage-pill {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .high-score { background: #27ae60; color: white; }
+        .low-score { background: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+    <h2 style="text-align:center; margin-top:30px;">Student Performance Records</h2>
+
+    <table class="grade-table">
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Exam</th>
+                <th>Score</th>
+                <th>Percentage</th>
+                <th>Date Submitted</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% results.forEach(row => { %>
+                <tr>
+                    <td><%= row.StudentName %></td>
+                    <td><%= row.ExamTitle %></td>
+                    <td><%= row.Score %> / <%= row.TotalMarks %></td>
+                    <td>
+                        <span class="percentage-pill <%= row.Percentage >= 50 ? 'high-score' : 'low-score' %>">
+                            <%= row.Percentage %>%
+                        </span>
+                    </td>
+                    <td><%= new Date(row.SubmittedAt).toLocaleDateString() %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</body>
+</html>

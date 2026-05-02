@@ -709,6 +709,39 @@ app.post('/submit-exam', isLoggedIn, isStudent, (req, res) => {
         });
     });
 });
+
+app.get('/teacher/gradebook', isLoggedIn, isTeacher, (req, res) => {
+    const teacherId = req.session.userId;
+
+    // This query pulls student names, exam titles, and their scores
+    const sql = `
+        SELECT 
+            u.FullName AS StudentName, 
+            e.Title AS ExamTitle, 
+            r.Score, 
+            r.TotalMarks, 
+            r.Percentage, 
+            r.SubmittedAt 
+        FROM Results r
+        JOIN Users u ON r.UserID = u.UserID
+        JOIN Exams e ON r.ExamID = e.ExamID
+        WHERE e.TeacherID = ?
+        ORDER BY r.SubmittedAt DESC
+    `;
+
+    connection.query(sql, [teacherId], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("Error fetching gradebook.");
+        }
+
+        res.render('gradebook', { 
+            results: results,
+            title: "Student Gradebook" 
+        });
+    });
+});
+
 app.listen(5000, (err) => {
   if (err)
     console.log(err);
