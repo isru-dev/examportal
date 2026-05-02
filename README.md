@@ -1,8 +1,3 @@
-Since you've wrapped up the development of the **Exam Portal** for your Year 3 Semester 2 project, a professional README is the perfect way to document your hard work. It showcases your transition from a "beginner" to an "aspiring" developer and highlights the technical depth of the project, including the database logic and modern UI.
-
-Here is a clean, minimalist README tailored to your specific project:
-
----
 
 # 🎓 Exam Portal - Student & Teacher Dashboard
 
