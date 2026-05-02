@@ -742,6 +742,22 @@ app.get('/teacher/gradebook', isLoggedIn, isTeacher, (req, res) => {
     });
 });
 
+app.get('/api/available-exams', isLoggedIn, isStudent, (req, res) => {
+    const userId = req.session.userId;
+
+    // This query finds exams that DO NOT have a result entry for this student
+    const sql = `
+        SELECT e.ExamID, e.Title, e.Duration 
+        FROM Exams e
+        LEFT JOIN Results r ON e.ExamID = r.ExamID AND r.UserID = ?
+        WHERE r.ResultID IS NULL
+    `;
+
+    connection.query(sql, [userId], (err, results) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json(results); // Send the list as JSON to your stud.js
+    });
+});
 app.listen(5000, (err) => {
   if (err)
     console.log(err);
